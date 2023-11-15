@@ -1,0 +1,7 @@
+.nav-pills a:hover {
+    background-color: blue;
+}
+
+.container-fluid {
+    overflow-x: hidden;
+}
