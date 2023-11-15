@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
         .then(user => {
             if (user.length)
                 res.json(user)
-        })
+        }) 
 })
 
 app.post('/signin', (req, res) => {
@@ -89,7 +89,7 @@ app.get('/:crm/columns', (req, res) => {
     const { crm } = req.params;
     db.select('*').from('information_schema.columns')
       .where({ table_name: crm })
-      .then(data => {
+      .then(data => { 
         const columns = data.map(item => item.column_name);
         res.json(columns);
       })
@@ -197,6 +197,92 @@ app.post('/:crm/update', (req, res) => {
       .catch((err) => {
           console.log('Error updating data:', err);
           res.status(500).json('Error updating data');
+      });
+});
+
+app.get('/:grp/sum', (req, res) => {
+  const { grp } = req.params;
+  let column, table;
+
+  if (grp === "amount") {
+    column = "cust_id";
+    table = "payment"
+  }
+  else {
+    column = "store_id";
+    if (grp === "quantity") {
+      table = "orders"
+    }
+    else {
+      table = "department"
+    }
+  }
+
+  db.select(column)
+      .sum(grp)
+      .from(table)
+      .groupBy(column)
+      .orderBy(column)
+      .then(data => {
+          res.json(data);
+      })
+      .catch(err => {
+          console.error('Error calculating store sales:', err);
+          res.status(500).json('Error calculating store sales');
+      });
+});
+
+app.post('/complexQuery', (req, res) => {
+  const { table1, table2, condition1, condition2, value } = req.body;
+
+  // Assuming the provided tables and conditions are valid
+  db.select('*')
+    .from(table1)
+    .where(condition1, 'IN', db.select(condition1)  // Select all conditions from table1 in the inner query
+      .from(table2)
+      .where(condition2, '=', value))
+    .then(data => {
+      res.json(data);
+    })
+    .catch(err => {
+      console.error('Error executing complex query:', err);
+      res.status(500).json('Error executing complex query');
+    });
+});
+
+app.post('/join', (req, res) => {
+  const { type, table1, table2, column } = req.body;
+  console.log(req.body);
+  // Assuming the provided tables and conditions are valid
+  let joinQuery;
+
+  switch (type.toLowerCase()) {
+      case 'inner':
+          joinQuery = 'innerJoin';
+          break;
+      case 'left':
+          joinQuery = 'leftJoin';
+          break;
+      case 'right':
+          joinQuery = 'rightJoin';
+          break;
+      case 'full':
+          joinQuery = 'fullOuterJoin';
+          break;
+      default:
+          // Default to inner join if typeJoin is not recognized
+          joinQuery = 'innerJoin';
+  }
+
+  db.select('*')
+      .from(table1)
+      [joinQuery](table2, `${table1}.${column}`, '=', `${table2}.${column}`)
+      .then(data => {
+          res.json(data);
+      })
+      .catch(err => {
+          console.error(`Error executing ${typeJoin} join query:`, err);
+          res.status(500).json(`Error executing ${typeJoin} join query`);
       });
 });
 
