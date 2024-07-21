@@ -9,8 +9,8 @@ const db = knex ({
     connection: {
       host : '127.0.0.1',
       port : 5432,
-      user : 'postgres',
-      password : '4264',
+      user : 'YOUR_USERNAME',
+      password : 'YOUR_PASSWORD',
       database : 'departmental-store'
     }
 });
